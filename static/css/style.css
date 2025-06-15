@@ -110,12 +110,13 @@ body {
 }
 
 .btn-success {
-  background: #3ba55d;
+  background: #0D111D;
   color: white;
 }
 
 .btn-success:hover {
-  background: #2d7d32;
+  opacity: 0.7;
+  border: 2px solid white;
 }
 
 .btn-danger {

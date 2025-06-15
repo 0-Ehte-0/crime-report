@@ -9,13 +9,6 @@
         
         <form method="POST" id="crimeForm">
             <div class="form-group">
-                <label for="title" class="form-label">What happened? *</label>
-                <input type="text" id="title" name="title" required class="form-input" 
-                       placeholder="Brief description of the incident"
-                       autocomplete="off" autocapitalize="sentences">
-            </div>
-            
-            <div class="form-group">
                 <label for="crime_type" class="form-label">Crime Type *</label>
                 <select id="crime_type" name="crime_type" required class="form-input form-select">
                     <option value="">Select Crime Type</option>
@@ -75,6 +68,7 @@
             </div>
             
             <!-- Hidden fields with default values -->
+            <input type="hidden" name="title" value="Crime">
             <input type="hidden" name="incident_date" id="incident_date">
             <input type="hidden" name="incident_time" value="12:00">
             <input type="hidden" name="priority" value="medium">

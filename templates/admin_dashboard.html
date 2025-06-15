@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Crime Reporting System{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto;">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Admin Dashboard</h2>
+        <div class="text-sm text-gray-500">
+            Welcome, <strong>{{ current_user.username }}</strong>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="card mb-6">
+        <h3 class="text-lg font-bold mb-4">Filters</h3>
+        <form method="GET" class="grid grid-2">
+            <div class="form-group">
+                <label for="status" class="form-label">Status</label>
+                <select name="status" id="status" class="form-input form-select" onchange="this.form.submit()">
+                    <option value="pending" {{ 'selected' if current_status == 'pending' }}>Pending</option>
+                    <option value="verified" {{ 'selected' if current_status == 'verified' }}>Verified</option>
+                    <option value="investigating" {{ 'selected' if current_status == 'investigating' }}>Investigating</option>
+                    <option value="rejected" {{ 'selected' if current_status == 'rejected' }}>Rejected</option>
+                    <option value="" {{ 'selected' if current_status == '' }}>All</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Reports -->
+    <div class="card">
+        <h3 class="text-lg font-bold mb-4">
+            {{ current_status.title() if current_status else 'All' }} Crime Reports
+            ({{ reports.total }} total)
+        </h3>
+        
+        {% if reports.items %}
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                {% for report in reports.items %}
+                <div class="border border-gray-200 rounded-lg p-4" data-priority="{{ report.priority }}">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="text-lg font-bold">{{ report.title }}</h4>
+                            <div style="margin-top: 0.5rem;">
+                                <span class="badge badge-{{ report.status }}">{{ report.status.title() }}</span>
+                                <span class="badge" style="background-color: #40444b; color: #dcddde; margin-left: 0.5rem;">
+                                    ID: {{ report.id }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <div><strong>Reported:</strong> {{ (report.created_at | ist).strftime('%B %d, %Y at %I:%M %p IST') }}</div>
+                        </div>
+                    </div>
+                    
+                    <p style="color: #e7f0e7;" class="mb-4">{{ report.description }}</p>
+                    
+                    <div class="grid grid-2 text-sm mb-4">
+                        <div>
+                            <strong>Reporter:</strong> {{ report.reporter_name }}<br>
+                            {% if report.reporter_email %}
+                            <strong>Email:</strong> {{ report.reporter_email }}<br>
+                            {% endif %}
+                            <strong>Type:</strong> {{ report.crime_type.replace('_', ' ').title() }}
+                        </div>
+                        <div>
+                            <strong style="text-decoration: underline;">Location:</strong> {{ report.address }}<br>
+                            <strong style="text-decoration: underline;">Coordinates:</strong> {{ "%.6f"|format(report.latitude) }}, {{ "%.6f"|format(report.longitude) }}
+                        </div>
+                    </div>
+                    
+                    <div class="flex" style="gap: 0.5rem; flex-wrap: wrap;">
+                        {% if report.status == 'pending' %}
+                        <button onclick="verifyReport({{ report.id }})" class="btn btn-success">
+                            ✓ Verify
+                        </button>
+                        <a href="{{ url_for('reject_report', report_id=report.id) }}" 
+                           class="btn btn-danger"
+                           onclick="return confirm('Are you sure you want to reject this report? This will send a warning SMS.')">
+                            ✗ Reject
+                        </a>
+                        {% endif %}
+                        
+                        <button onclick="showOnMap({{ report.latitude }}, {{ report.longitude }}, '{{ report.title }}', '{{ report.crime_type }}', '{{ report.priority }}', {{ report.id }})" 
+                                class="btn btn-primary">
+                            📍 View on Map
+                        </button>
+                        
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if reports.pages > 1 %}
+            <div class="pagination">
+                {% if reports.has_prev %}
+                    <a href="{{ url_for('admin_dashboard', page=reports.prev_num, status=current_status) }}">&laquo; Previous</a>
+                {% endif %}
+                
+                {% for page_num in reports.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != reports.page %}
+                            <a href="{{ url_for('admin_dashboard', page=page_num, status=current_status) }}">{{ page_num }}</a>
+                        {% else %}
+                            <span class="current">{{ page_num }}</span>
+                        {% endif %}
+                    {% else %}
+                        <span>...</span>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if reports.has_next %}
+                    <a href="{{ url_for('admin_dashboard', page=reports.next_num, status=current_status) }}">Next &raquo;</a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+        {% else %}
+            <div class="text-center" style="padding: 3rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+                <p class="text-gray-500">No reports found matching your criteria.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Map Modal -->
+<div id="mapModal" class="modal hidden">
+    <div class="modal-content" style="max-width: 1800px; width: 95vw;">
+        <div class="modal-header">
+            <h3 class="text-lg font-bold">Crime Location</h3>
+            <button onclick="CrimeReportingApp.closeModal('mapModal')" class="modal-close">
+                ×
+            </button>
+        </div>
+        <div id="modalMap" style="height: 600px; border-radius: 8px;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let modalMap;
+let modalMarker;
+
+function showOnMap(lat, lng, title, crimeType, priority, reportId) {
+    CrimeReportingApp.openModal('mapModal');
+    
+    setTimeout(() => {
+        if (!modalMap) {
+            modalMap = L.map('modalMap').setView([lat, lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(modalMap);
+        } else {
+            modalMap.setView([lat, lng], 15);
+        }
+        
+        if (modalMarker) {
+            modalMap.removeLayer(modalMarker);
+        }
+        
+        modalMarker = L.marker([lat, lng]).addTo(modalMap);
+        
+        // Enhanced popup with more details
+        const popupContent = `
+            <div style="padding: 1rem; min-width: 300px;">
+                <h3 style="font-weight: bold; font-size: 1.2rem; margin-bottom: 0.75rem; color: #ed4245;">
+                    ${title}
+                </h3>
+                <div style="font-size: 0.9rem; color: #dcddde; line-height: 1.4;">
+                    <div style="margin-bottom: 0.5rem;"><strong>Type:</strong> ${crimeType.replace('_', ' ').toUpperCase()}</div>
+                    <div style="margin-bottom: 0.5rem;"><strong>Priority:</strong> <span style="color: ${getPriorityColor(priority)}; font-weight: bold;">${priority.toUpperCase()}</span></div>
+                    <div style="margin-bottom: 0.5rem;"><strong>Report ID:</strong> #${reportId}</div>
+                    <div style="margin-bottom: 0.5rem;"><strong>Coordinates:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+                </div>
+            </div>
+        `;
+        
+        modalMarker.bindPopup(popupContent).openPopup();
+        
+        // Fix map display issues
+        modalMap.invalidateSize();
+    }, 100);
+}
+
+function getPriorityColor(priority) {
+    switch(priority) {
+        case 'urgent': return '#ed4245';
+        case 'high': return '#faa61a';
+        case 'medium': return '#3ba55d';
+        case 'low': return '#72767d';
+        default: return '#dcddde';
+    }
+}
+
+function verifyReport(reportId) {
+    if (confirm('Are you sure you want to verify this report?')) {
+        const investigation = confirm('Would you like to continue with an investigation?');
+        const url = `/admin/verify/${reportId}${investigation ? '?investigation=true' : ''}`;
+        window.location.href = url;
+    }
+}
+</script>
+{% endblock %}
+
+

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center" style="padding: 3rem 0;">
+    <h1 class="text-4xl font-bold mb-4">Crime Reporting System</h1>
+    <p class="text-xl mb-8" style="color: #72767d;">Help make your community safer by reporting crimes</p>
+    
+    <!-- Statistics - Only for Admins -->
+    {% if current_user.is_authenticated and current_user.is_admin and stats %}
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-number">{{ stats.total }}</span>
+            <span class="stat-label">Total Reports</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ stats.verified }}</span>
+            <span class="stat-label">Verified Reports</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ stats.pending }}</span>
+            <span class="stat-label">Pending Review</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ stats.investigating }}</span>
+            <span class="stat-label">Under Investigation</span>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Action Cards -->
+    <div class="card-grid">
+        <div class="card text-center">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🚨</div>
+            <h3 class="text-lg font-bold mb-2">Report Crime</h3>
+            <p style="color: #72767d;" class="mb-4">Submit a crime alert with location details</p>
+            <a href="{{ url_for('report_crime') }}" class="btn btn-primary">Report Now</a>
+        </div>
+        
+        <div class="card text-center">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+            <h3 class="text-lg font-bold mb-2">Crime Feed</h3>
+            <p style="color: #72767d;" class="mb-4">View verified crime reports in your area</p>
+            <a href="{{ url_for('crime_feed') }}" class="btn btn-success">View Feed</a>
+        </div>
+        
+        <div class="card text-center">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🗺️</div>
+            <h3 class="text-lg font-bold mb-2">Crime Map</h3>
+            <p style="color: #72767d;" class="mb-4">Interactive map showing crime locations</p>
+            <a href="{{ url_for('crime_map') }}" class="btn btn-primary">View Map</a>
+        </div>
+        
+        <div class="card text-center">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">👮</div>
+            <h3 class="text-lg font-bold mb-2">Admin Panel</h3>
+            <p style="color: #72767d;" class="mb-4">Police/Admin verification portal</p>
+            {% if current_user.is_authenticated and current_user.is_admin %}
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-danger">Dashboard</a>
+            {% else %}
+                <a href="{{ url_for('admin_login') }}" class="btn btn-danger">Admin Login</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

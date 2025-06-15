@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Report Crime - Crime Reporting System{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div class="card">
+        <h2 class="text-2xl font-bold mb-6 mobile-text-center">Report a Crime</h2>
+        
+        <form method="POST" id="crimeForm">
+            <div class="form-group">
+                <label for="title" class="form-label">What happened? *</label>
+                <input type="text" id="title" name="title" required class="form-input" 
+                       placeholder="Brief description of the incident"
+                       autocomplete="off" autocapitalize="sentences">
+            </div>
+            
+            <div class="form-group">
+                <label for="crime_type" class="form-label">Crime Type *</label>
+                <select id="crime_type" name="crime_type" required class="form-input form-select">
+                    <option value="">Select Crime Type</option>
+                    <option value="theft">Theft</option>
+                    <option value="assault">Assault</option>
+                    <option value="burglary">Burglary</option>
+                    <option value="vandalism">Vandalism</option>
+                    <option value="drug_related">Drug Related</option>
+                    <option value="fraud">Fraud</option>
+                    <option value="domestic_violence">Domestic Violence</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="description" class="form-label">Description *</label>
+                <textarea id="description" name="description" rows="4" required 
+                          class="form-input form-textarea"
+                          placeholder="Provide detailed description of the incident..."
+                          autocomplete="off" autocapitalize="sentences"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Location *</label>
+                
+                <!-- Mobile-optimized urgent button -->
+                <div style="margin-bottom: 1rem;">
+                    <button type="button" id="urgentLocationBtn" class="btn btn-danger mobile-full-width">
+                        GET MY LOCATION NOW
+                    </button>
+                </div>
+                
+                <div id="map" class="map-container"></div>
+                
+                <div style="position: relative; margin-top: 1rem;">
+                    <input type="text" id="address" name="address" required 
+                           class="form-input"
+                           placeholder="Use location button, tap map, or type address..."
+                           autocomplete="street-address">
+                </div>
+                
+                <input type="hidden" id="latitude" name="latitude">
+                <input type="hidden" id="longitude" name="longitude">
+            </div>
+            
+            <div class="form-group">
+                <label for="reporter_phone" class="form-label">Your Phone Number *</label>
+                <div class="phone-input">
+                    <span class="phone-prefix">+91</span>
+                    <input type="tel" id="reporter_phone" name="reporter_phone" required 
+                           class="form-input" placeholder="98765 43210"
+                           autocomplete="tel" inputmode="numeric">
+                </div>
+                <small style="color: #72767d; font-size: 0.875rem; margin-top: 0.5rem; display: block;">
+                    📱 We'll send you SMS updates about your report
+                </small>
+            </div>
+            
+            <!-- Hidden fields with default values -->
+            <input type="hidden" name="incident_date" id="incident_date">
+            <input type="hidden" name="incident_time" value="12:00">
+            <input type="hidden" name="priority" value="medium">
+            <input type="hidden" name="reporter_name" value="Anonymous Reporter">
+            <input type="hidden" name="landmark" value="">
+            <input type="hidden" name="witnesses" value="">
+            <input type="hidden" name="evidence_description" value="">
+            <input type="hidden" name="reporter_email" value="">
+            <input type="hidden" name="is_anonymous" value="true">
+            
+            <button type="submit" id="submitBtn" class="btn btn-primary w-full" style="margin-top: 1.5rem;">
+                Submit Crime Alert
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isMobile = CrimeReportingApp.isMobileDevice();
+    
+    // Initialize map with mobile-optimized settings
+    const mapZoom = isMobile ? 12 : 13;
+    const map = CrimeReportingApp.initializeMap('map', 17.3850, 78.4867);
+    CrimeReportingApp.addMapClickHandler('latitude', 'longitude', 'address');
+    
+    // Setup location autocomplete
+    CrimeReportingApp.setupLocationAutocomplete('address', 'latitude', 'longitude');
+    
+    // Mobile-optimized urgent location button
+    const urgentBtn = document.getElementById('urgentLocationBtn');
+    urgentBtn.addEventListener('click', function() {
+        // Mobile-specific button feedback
+        this.disabled = true;
+        this.innerHTML = '📱 Getting Location...';
+        this.style.opacity = '0.7';
+        
+        // Add mobile loading class
+        document.body.classList.add('getting-location');
+        
+        // Call the mobile-optimized location function
+        CrimeReportingApp.getCurrentLocationUrgent('latitude', 'longitude', 'address');
+        
+        // Re-enable button after timeout (longer for mobile)
+        setTimeout(() => {
+            this.disabled = false;
+            this.innerHTML = 'GET MY LOCATION NOW';
+            this.style.opacity = '1';
+            document.body.classList.remove('getting-location');
+        }, isMobile ? 45000 : 30000);
+    });
+    
+    // Add form validation
+    CrimeReportingApp.addRealTimeValidation('crimeForm');
+    CrimeReportingApp.submitFormWithLoading('crimeForm', 'submitBtn');
+    
+    // Set default incident date to today
+    document.getElementById('incident_date').valueAsDate = new Date();
+    
+    // Mobile-specific welcome message
+    setTimeout(() => {
+        const welcomeMessage = isMobile ? 
+            '📱 Mobile Optimized!\nTap the red button for precise GPS location' :
+            '💡 Tip: For emergency situations, use the URGENT button for precise GPS location';
+        CrimeReportingApp.showNotification(welcomeMessage, 'info', isMobile ? 6000 : 8000);
+    }, 1500);
+    
+    // Mobile keyboard handling
+    if (isMobile) {
+        const inputs = document.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                // Scroll to input on mobile with delay for keyboard
+                setTimeout(() => {
+                    this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

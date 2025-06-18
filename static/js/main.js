@@ -55,7 +55,7 @@ function validateForm(formId) {
       field.classList.remove("invalid")
     }
 
-    // Special validation for phone numbers
+    
     if (field.type === "tel") {
       const phoneValid = formatPhoneNumber(field)
       if (!phoneValid) {
@@ -63,7 +63,7 @@ function validateForm(formId) {
       }
     }
 
-    // Email validation
+    
     if (field.type === "email" && field.value) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(field.value)) {
